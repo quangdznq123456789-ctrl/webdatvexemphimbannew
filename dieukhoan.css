@@ -401,7 +401,8 @@ body br {
   }
 }
 
-.heade-righ {
+.header-righ {
+  justify-content: flex-end;
   margin-left: auto;
 
   display: flex;

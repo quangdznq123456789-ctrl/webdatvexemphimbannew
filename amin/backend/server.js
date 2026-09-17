@@ -65,6 +65,7 @@ app.post("/api/phim", async (req, res) => {
       Ngonngu,
       Rated,
       noidung,
+      Trailer,
     } = req.body;
 
     const pool = await poolPromise;
@@ -90,7 +91,8 @@ app.post("/api/phim", async (req, res) => {
 
       .input("Rated", sql.NVarChar(50), Rated)
 
-      .input("noidung", sql.NVarChar(sql.MAX), noidung).query(`
+      .input("noidung", sql.NVarChar(sql.MAX), noidung)
+      .input("Trailer", sql.NVarChar(500), Trailer).query(`
                 INSERT INTO Phim
                 (
                     AnhPhim,
@@ -102,7 +104,8 @@ app.post("/api/phim", async (req, res) => {
                     ThoiLuong,
                     Ngonngu,
                     Rated,
-                    noidung
+                    noidung,
+                    Trailer
                 )
 
                 VALUES
@@ -116,7 +119,8 @@ app.post("/api/phim", async (req, res) => {
                     @ThoiLuong,
                     @Ngonngu,
                     @Rated,
-                    @noidung
+                    @noidung,
+                    @Trailer
                 )
             `);
 
@@ -498,15 +502,22 @@ app.put("/api/taikhoan/:id/trangthai", async (req, res) => {
   try {
     const maTaiKhoan = Number(req.params.id);
 
+    if (isNaN(maTaiKhoan)) {
+      return res.status(400).json({
+        message: "Mã tài khoản không hợp lệ!",
+      });
+    }
+
     const pool = await poolPromise;
 
+    // Tìm tài khoản
     const checkAccount = await pool
       .request()
       .input("MaTaiKhoan", sql.Int, maTaiKhoan).query(`
-                SELECT *
-                FROM TaiKhoan
-                WHERE MaTaiKhoan = @MaTaiKhoan
-            `);
+        SELECT MaTaiKhoan, TrangThai
+        FROM TaiKhoan
+        WHERE MaTaiKhoan = @MaTaiKhoan
+      `);
 
     if (checkAccount.recordset.length === 0) {
       return res.status(404).json({
@@ -514,31 +525,36 @@ app.put("/api/taikhoan/:id/trangthai", async (req, res) => {
       });
     }
 
-    const account = checkAccount.recordset[0];
+    const trangThaiHienTai = checkAccount.recordset[0].TrangThai.trim();
 
     let trangThaiMoi;
 
-    if (account.TrangThai.trim() === "Hoạt động") {
+    if (trangThaiHienTai === "Hoạt động") {
       trangThaiMoi = "Bị khóa";
-    } else {
+    } else if (trangThaiHienTai === "Bị khóa") {
       trangThaiMoi = "Hoạt động";
+    } else {
+      return res.status(400).json({
+        message: "Trạng thái tài khoản không hợp lệ!",
+      });
     }
 
+    // Cập nhật trạng thái
     await pool
       .request()
       .input("MaTaiKhoan", sql.Int, maTaiKhoan)
       .input("TrangThai", sql.NVarChar(50), trangThaiMoi).query(`
-                UPDATE TaiKhoan
-                SET TrangThai = @TrangThai
-                WHERE MaTaiKhoan = @MaTaiKhoan
-            `);
+        UPDATE TaiKhoan
+        SET TrangThai = @TrangThai
+        WHERE MaTaiKhoan = @MaTaiKhoan
+      `);
 
     res.json({
       message: "Cập nhật trạng thái thành công!",
       TrangThai: trangThaiMoi,
     });
   } catch (error) {
-    console.error(error);
+    console.error("LỖI KHÓA/MỞ KHÓA TÀI KHOẢN:", error);
 
     res.status(500).json({
       message: "Không thể cập nhật trạng thái tài khoản!",
@@ -1646,6 +1662,130 @@ app.post("/api/taikhoan", async (req, res) => {
 
     res.status(500).json({
       message: "Lỗi khi thêm tài khoản!",
+      error: error.message,
+    });
+  }
+});
+app.get("/api/doanhthu", async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request().query(`
+      SELECT
+        p.TenPhim,
+        p.AnhPhim,
+        p.TrangThai,
+
+        ISNULL(ve.SoVeBan, 0) AS SoVeBan,
+
+        ISNULL(dt.TongDoanhThu, 0) AS TongDoanhThu
+
+      FROM Phim p
+
+      LEFT JOIN
+      (
+        -- ĐẾM SỐ VÉ
+        SELECT
+          sc.TenPhim,
+          COUNT(cd.MaChiTiet) AS SoVeBan
+
+        FROM SuatChieu sc
+
+        INNER JOIN DatVe dv
+          ON sc.MaSuatChieu = dv.MaSuatChieu
+
+        INNER JOIN ChiTietDatVe cd
+          ON dv.MaDatVe = cd.MaDatVe
+
+        WHERE dv.TrangThai = N'Đã đặt'
+
+        GROUP BY sc.TenPhim
+
+      ) ve
+        ON p.TenPhim = ve.TenPhim
+
+      LEFT JOIN
+      (
+        -- TÍNH DOANH THU
+        SELECT
+          sc.TenPhim,
+          SUM(dv.TongTien) AS TongDoanhThu
+
+        FROM SuatChieu sc
+
+        INNER JOIN DatVe dv
+          ON sc.MaSuatChieu = dv.MaSuatChieu
+
+        WHERE dv.TrangThai = N'Đã đặt'
+
+        GROUP BY sc.TenPhim
+
+      ) dt
+        ON p.TenPhim = dt.TenPhim
+
+      ORDER BY p.TenPhim
+    `);
+
+    res.json(result.recordset);
+  } catch (error) {
+    console.error("LỖI LẤY DOANH THU:", error);
+
+    res.status(500).json({
+      message: "Không thể lấy dữ liệu doanh thu!",
+      error: error.message,
+    });
+  }
+});
+// ==========================================
+// API SỬA MẬT KHẨU TÀI KHOẢN
+// ==========================================
+
+app.put("/api/taikhoan/:id/matkhau", async (req, res) => {
+  try {
+    const maTaiKhoan = Number(req.params.id);
+    const { MatKhau } = req.body;
+
+    if (!MatKhau || MatKhau.trim() === "") {
+      return res.status(400).json({
+        message: "Mật khẩu không được để trống!",
+      });
+    }
+
+    const pool = await poolPromise;
+
+    // Kiểm tra tài khoản có tồn tại không
+    const checkAccount = await pool
+      .request()
+      .input("MaTaiKhoan", sql.Int, maTaiKhoan).query(`
+        SELECT MaTaiKhoan, HoTen
+        FROM TaiKhoan
+        WHERE MaTaiKhoan = @MaTaiKhoan
+      `);
+
+    if (checkAccount.recordset.length === 0) {
+      return res.status(404).json({
+        message: "Không tìm thấy tài khoản!",
+      });
+    }
+
+    // Cập nhật mật khẩu
+    await pool
+      .request()
+      .input("MaTaiKhoan", sql.Int, maTaiKhoan)
+      .input("MatKhau", sql.NVarChar(255), MatKhau).query(`
+        UPDATE TaiKhoan
+        SET MatKhau = @MatKhau
+        WHERE MaTaiKhoan = @MaTaiKhoan
+      `);
+
+    res.json({
+      message: "Đổi mật khẩu thành công!",
+    });
+  } catch (error) {
+    console.error("LỖI SỬA MẬT KHẨU:", error);
+
+    res.status(500).json({
+      message: "Không thể sửa mật khẩu tài khoản!",
       error: error.message,
     });
   }

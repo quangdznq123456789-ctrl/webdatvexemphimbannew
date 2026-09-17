@@ -10,6 +10,7 @@ const movieLanguage = document.getElementById("movieLanguage");
 const movieRated = document.getElementById("movieRated");
 const movieContent = document.getElementById("movieContent");
 const movieImage = document.getElementById("movieImage");
+const movieTrailer = document.getElementById("movieTrailer");
 
 const addMovieMessage = document.getElementById("addMovieMessage");
 
@@ -40,6 +41,8 @@ addMovieForm.addEventListener("submit", async function (event) {
     Rated: movieRated.value,
 
     noidung: movieContent.value.trim(),
+
+    Trailer: movieTrailer.value.trim(),
   };
 
   try {

@@ -303,13 +303,9 @@ GHẾ
 
 .ghe-container {
   display: grid;
-
-  grid-template-columns: repeat(8, 1fr);
-
-  gap: 12px;
-
-  max-width: 650px;
-
+  grid-template-columns: repeat(10, 1fr);
+  gap: 10px;
+  max-width: 750px;
   margin: 0 auto;
 }
 

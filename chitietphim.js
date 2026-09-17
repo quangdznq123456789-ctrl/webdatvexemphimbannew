@@ -1,5 +1,5 @@
 const movieList = document.getElementById("movieList");
-
+let movieHienTai = null;
 // ===============================
 // LẤY TÊN PHIM TỪ URL
 // ===============================
@@ -79,7 +79,7 @@ async function loadMovie() {
 
       return;
     }
-
+    movieHienTai = movie;
     // ===============================
     // HIỂN THỊ PHIM
     // ===============================
@@ -157,7 +157,7 @@ async function loadMovie() {
 
           <button
             type="button"
-            onclick="showTrailer('${movie.TenPhim}')"
+            onclick="showTrailer()"
           >
             Trailer
           </button>
@@ -216,8 +216,72 @@ function showMovieDetail(movieName) {
   alert("Tên phim: " + movieName);
 }
 
-function showTrailer(movieName) {
-  alert("Trailer phim: " + movieName);
+// ===============================
+// HIỂN THỊ TRAILER
+// ===============================
+
+function showTrailer() {
+  if (!movieHienTai) {
+    alert("Không tìm thấy thông tin phim!");
+    return;
+  }
+
+  if (!movieHienTai.Trailer) {
+    alert("Phim này chưa có trailer!");
+    return;
+  }
+
+  const modal = document.getElementById("trailerModal");
+  const video = document.getElementById("trailerVideo");
+
+  // Lấy link YouTube
+  const trailerURL = movieHienTai.Trailer;
+
+  // Lấy video ID từ link:
+  // https://www.youtube.com/watch?v=8LJm14u1o-E
+  const url = new URL(trailerURL);
+  const videoId = url.searchParams.get("v");
+
+  if (!videoId) {
+    alert("Link trailer YouTube không hợp lệ!");
+    return;
+  }
+
+  // Chuyển sang link embed
+  video.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1";
+
+  // Hiện modal
+  modal.style.display = "flex";
 }
+
+// ===============================
+// ĐÓNG TRAILER
+// ===============================
+
+function closeTrailer() {
+  const modal = document.getElementById("trailerModal");
+  const video = document.getElementById("trailerVideo");
+
+  // Xóa iframe để dừng YouTube
+  video.src = "";
+
+  // Ẩn modal
+  modal.style.display = "none";
+}
+
+// ===============================
+// BẤM RA NGOÀI VIDEO ĐỂ ĐÓNG
+// ===============================
+
+document.addEventListener("click", function (event) {
+  const modal = document.getElementById("trailerModal");
+
+  const trailerBox = document.querySelector(".trailer-box");
+
+  // Nếu click vào vùng nền bên ngoài video
+  if (event.target === modal && !trailerBox.contains(event.target)) {
+    closeTrailer();
+  }
+});
 
 loadMovie();

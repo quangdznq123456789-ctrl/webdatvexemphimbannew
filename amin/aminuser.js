@@ -120,14 +120,20 @@ function displayAccounts(accountData) {
                 >
                     ${account.TrangThai === "Hoạt động" ? "KHÓA" : "MỞ KHÓA"}
                 </button>
-
+                
+                <button
+    class="btn btn-primary btn-sm"
+    onclick="editAccount(${account.MaTaiKhoan}, '${account.HoTen}')"
+>
+    SỬA
+</button>
                 <button
                     class="btn btn-danger btn-sm"
                     onclick="deleteAccount(${account.MaTaiKhoan})"
                 >
                     XÓA
                 </button>
-
+                
             </td>
 
         `;
@@ -206,6 +212,101 @@ async function changeAccountRole(maTaiKhoan, vaiTroMoi) {
   }
 }
 
+async function changeAccountStatus(maTaiKhoan) {
+  const confirmChange = confirm(
+    "Bạn có chắc muốn thay đổi trạng thái tài khoản này không?",
+  );
+
+  if (!confirmChange) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/taikhoan/${maTaiKhoan}/trangthai`,
+      {
+        method: "PUT",
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.message || "Cập nhật trạng thái thất bại!");
+      return;
+    }
+
+    alert(result.message);
+
+    // Tải lại danh sách tài khoản
+    loadAccounts();
+  } catch (error) {
+    console.error(error);
+
+    alert("Không thể kết nối đến Backend!");
+  }
+}
+
+// ===============================
+// SỬA MẬT KHẨU TÀI KHOẢN
+// ===============================
+
+async function editAccount(maTaiKhoan, hoTen) {
+  const matKhauMoi = prompt(
+    `Sửa mật khẩu cho tài khoản "${hoTen}"\n\nNhập mật khẩu mới:`,
+  );
+
+  // Người dùng bấm Cancel
+  if (matKhauMoi === null) {
+    return;
+  }
+
+  // Không nhập mật khẩu
+  if (matKhauMoi.trim() === "") {
+    alert("Mật khẩu không được để trống!");
+    return;
+  }
+
+  const xacNhan = confirm(
+    `Bạn có chắc muốn đổi mật khẩu của tài khoản "${hoTen}" không?`,
+  );
+
+  if (!xacNhan) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/taikhoan/${maTaiKhoan}/matkhau`,
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          MatKhau: matKhauMoi,
+        }),
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.message || "Sửa mật khẩu thất bại!");
+      return;
+    }
+
+    alert(result.message);
+
+    loadAccounts();
+  } catch (error) {
+    console.error(error);
+
+    alert("Không thể kết nối đến Backend!");
+  }
+}
 // ===============================
 // XÓA TÀI KHOẢN
 // ===============================

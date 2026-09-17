@@ -431,6 +431,12 @@ document.getElementById("giamDichVu").addEventListener("click", function () {
 // ===============================
 
 document.getElementById("tangDichVu").addEventListener("click", function () {
+  // Không cho số combo vượt quá số ghế
+  if (soLuongDichVu >= gheDangChon.length) {
+    alert("Số lượng combo không được vượt quá số ghế đã đặt!");
+    return;
+  }
+
   soLuongDichVu++;
 
   document.getElementById("soLuongDichVu").textContent = soLuongDichVu;
@@ -444,7 +450,6 @@ document.getElementById("tangDichVu").addEventListener("click", function () {
 
   capNhatTongTien();
 });
-
 // ===============================
 // GIẢM SỐ LƯỢNG NƯỚC
 // ===============================

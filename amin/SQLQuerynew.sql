@@ -17,6 +17,14 @@ ADD TrangThai NVARCHAR(50) NOT NULL
     CONSTRAINT DF_Phim_TrangThai
     DEFAULT N'Hoạt động';
 
+ALTER TABLE Phim
+ADD Trailer NVARCHAR(500) NULL;
+
+UPDATE Phim
+SET Trailer = N'https://www.youtube.com/watch?v=2w8tCggbkNw'
+WHERE TenPhim = N'SIÊU CHÓ ĐẠP GIÓ ĐÓN LỄ';
+
+select * from Phim
 
 USE web_dat_ve;
 
@@ -49,9 +57,29 @@ INSERT INTO TaiKhoan(HoTen,SoDienThoai,MatKhau,VaiTro)
 VALUES (N'Quản trị viên','0367265164','daylaamin123',N'Admin');
 
 
-select * from TaiKhoan;
+select * from DatVe;
 
+delete from DatVe
 
+UPDATE TaiKhoan
+SET VaiTro = N'Khách Hàng'
+WHERE VaiTro = N'User';
+
+SELECT 
+    dc.name AS TenConstraint
+FROM sys.default_constraints dc
+JOIN sys.columns c
+    ON dc.parent_object_id = c.object_id
+    AND dc.parent_column_id = c.column_id
+WHERE OBJECT_NAME(dc.parent_object_id) = 'TaiKhoan'
+AND c.name = 'VaiTro';
+
+ALTER TABLE TaiKhoan
+DROP CONSTRAINT DF__TaiKhoan__VaiTro__5DCAEF64;
+
+ALTER TABLE TaiKhoan
+ADD CONSTRAINT DF_TaiKhoan_VaiTro
+DEFAULT N'Khách hàng' FOR VaiTro;
 
 
 

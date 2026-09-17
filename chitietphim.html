@@ -26,7 +26,27 @@
     <hr />
 
     <div class="movie-list" id="movieList"></div>
+    <!-- MODAL TRAILER -->
 
+    <div id="trailerModal" class="trailer-modal">
+      <div class="trailer-box">
+        <button type="button" class="close-trailer" onclick="closeTrailer()">
+          &times;
+        </button>
+
+        <iframe
+          id="trailerVideo"
+          width="100%"
+          height="500"
+          src=""
+          title="Trailer phim"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+        >
+        </iframe>
+      </div>
+    </div>
     <script src="./chitietphim.js"></script>
 
     <script src="./bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
